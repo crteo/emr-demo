@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMR Documentation - Demo Edition</title>
+    <style>
+        :root {
+            --bg-main: #EBEBEB;
+            --bg-sidebar: #f5f5f5;
+            --bg-input: #FFFFFF;
+            --border-color: #A0A0A0;
+            --text-main: #333333;
+            --header-gray: #f0f0f0;
+            --highlight-blue: #006D9C;
+            --highlight-text: #ffffff;
+            --tree-hover: #d9d9d9;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            font-size: 11px; color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+
+        .top-nav {
+            background: var(--header-gray);
+            border-bottom: 1px solid var(--border-color);
+            padding: 4px 10px; display: flex; gap: 15px; align-items: center;
+        }
+
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .sidebar-header {
+            padding: 5px; font-weight: bold;
+            border-bottom: 1px solid var(--border-color);
+            background: #e0e0e0;
+            margin-bottom: 5px;
+        }
+
+        .tree-item {
+            padding: 3px 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex; align-items: center;
+        }
+
+        .tree-item:hover { background: var(--tree-hover); }
+        .tree-item.active { 
+            background: var(--highlight-blue); 
+            color: white;
+        }
+
+        .lvl-1 { padding-left: 10px; font-weight: bold; }
+        .lvl-2 { padding-left: 25px; font-weight: normal; }
+
+        .content-area {
+            flex: 1; background: var(--bg-main);
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .content-toolbar {
+            padding: 5px; background: #f8f8f8;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 1px solid #999; background: #eee;
+            padding: 4px 8px; cursor: pointer;
+            font-size: 11px; display: flex; align-items: center; gap: 4px;
+        }
+
+        .btn:hover { background: #ddd; }
+        .btn.export { background: #4CAF50; color: white; border-color: #45a049; }
+        .btn.import { background: #2196F3; color: white; border-color: #0b7dda; }
+        .btn.clear { background: #f44336; color: white; border-color: #da190b; }
+
+        .view-content { display: none; padding: 10px; }
+        .view-content.active { display: block; }
+
+        .section-title {
+            color: var(--highlight-blue);
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 8px;
+            padding-bottom: 2px;
+        }
+
+        textarea, input[type="text"], select {
+            border: 1px solid #7F9DB9;
+            font-family: inherit; font-size: 11px;
+            box-sizing: border-box;
+        }
+        
+        textarea { resize: vertical; width: 100%; }
+
+        .plan-row {
+            display: flex;
+            border-bottom: 1px solid #dcdcdc;
+            background: #fff;
+            min-height: 26px;
+        }
+        .plan-label {
+            width: 180px;
+            background: #f0f0f0;
+            padding: 5px;
+            font-weight: bold;
+            border-right: 1px solid #dcdcdc;
+            display: flex; align-items: center;
+        }
+        .plan-input {
+            flex: 1; padding: 5px;
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+
+        .treatment-plan-container {
+            display: flex; margin-top: 15px;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        .treatment-label {
+            width: 180px;
+            background-color: var(--highlight-blue);
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+        }
+
+        .mobility-grid { display: table; width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #ccc; }
+        .m-row { display: table-row; border-bottom: 1px solid #eee; }
+        .m-cell { display: table-cell; padding: 3px; vertical-align: middle; }
+        .m-check { width: 20px; text-align: center; }
+        .m-label { width: 160px; font-weight: 500; background: #f9f9f9; padding-left: 5px; }
+        .row-highlight { background-color: var(--highlight-blue); color: white; }
+        .row-highlight .m-label { background-color: transparent; color: white; }
+
+        .active-goal-card { border: 1px solid var(--highlight-blue); background: #fff; margin-bottom: 15px; }
+        .active-goal-header { background: var(--highlight-blue); color: white; padding: 4px; font-weight: bold; }
+        .active-goal-body { display: flex; padding: 5px; gap: 10px; flex-direction: column; }
+
+        .rte-box { border: 1px solid #999; background: #fff; margin-bottom: 10px; }
+        .rte-toolbar { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 3px; display: flex; gap: 5px; }
+        .rte-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal.active { display: block; }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 5px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--highlight-blue);
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover { color: black; }
+
+        #importJSON {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 8px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .copy-btn { background: #4CAF50; color: white; }
+        .copy-btn:hover { background: #45a049; }
+
+        .demo-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="top-nav">
+        <span style="font-weight: bold;">📋 EMR - Demo Edition</span>
+        <div style="margin-left: auto; display: flex; gap: 8px;">
+            <button class="btn export" onclick="exportData()">💾 Export Data (JSON)</button>
+            <button class="btn import" onclick="showImportModal()">📥 Import Data (JSON)</button>
+            <button class="btn clear" onclick="clearAllData()">🗑️ Clear All</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-header">Sections</div>
+            
+            <div class="tree-item lvl-1">**Special Note</div>
+            <div class="tree-item lvl-1">**Subjective</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-subjective', this)">Subjective</div>
+            
+            <div class="tree-item lvl-1">**##Pain Assessment</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-pain', this)">Pain Assessment</div>
+            
+            <div class="tree-item lvl-1">**Objective</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-observation', this)">Observation</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Range of Motion</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-mobility', this)">Mobility</div>
+
+            <div class="tree-item lvl-1">**Outcome Measures</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-outcome', this)">Outcome Measures</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-walk', this)">Walk Test</div>
+
+            <div class="tree-item lvl-1">**Analysis</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-analysis', this)">Analysis & Goals</div>
+
+            <div class="tree-item lvl-1">**Intervention</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-intervention', this)">Intervention & Evaluation</div>
+
+            <div class="tree-item lvl-1">**Plan</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-plan', this)">Plan</div>
+
+            <div class="tree-item lvl-1">**Disclaimer</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-disclaimer', this)">Disclaimer</div>
+        </div>
+
+        <div class="content-area">
+            <div class="demo-notice">
+                ✅ <strong>Demo Mode:</strong> Fill in the fields below, then click "Export Data" to save your inputs as JSON. Share the JSON with the development team or use it to auto-populate fields in your demo video.
+            </div>
+
+            <!-- PAIN ASSESSMENT TAB -->
+            <div id="view-pain" class="view-content">
+                <div class="section-title">Pain Assessment</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Pain :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="pain" class="data-field" checked> Yes</label>
+                            <label><input type="radio" name="pain" class="data-field"> No</label>
+                            <label><input type="radio" name="pain" class="data-field"> Unable to Assess</label>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Location :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="painLocation" style="width: 100%; max-width: 400px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Description :</div>
+                        <div class="plan-input">
+                            <textarea class="data-field" id="painDescription" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Frequency :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="pfreq" class="data-field"> Constant</label>
+                            <label><input type="radio" name="pfreq" class="data-field"> At Rest</label>
+                            <label><input type="radio" name="pfreq" class="data-field" checked> Movement</label>
+                            <label><input type="radio" name="pfreq" class="data-field"> Sporadic</label>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Current Pain Intensity :</div>
+                        <div class="plan-input">
+                            <select class="data-field" id="painIntensity" style="width: 80px;">
+                                <option value="">Select</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBJECTIVE TAB -->
+            <div id="view-subjective" class="view-content">
+                <div class="section-title">Subjective Findings</div>
+                <div style="display: flex;">
+                    <div style="width: 150px; font-weight: bold; background: #006D9C; color: white; padding: 5px;">Subjective :</div>
+                    <textarea class="data-field" id="subjectiveFindings" style="flex: 1; height: 200px; border: 1px solid #006D9C;"></textarea>
+                </div>
+            </div>
+
+            <!-- OBSERVATION TAB -->
+            <div id="view-observation" class="view-content">
+                <div class="section-title">Observation - Vital Signs</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Pulse Rate (bpm) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="pulseRate" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Blood Pressure :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="bpSystolic" placeholder="Systolic" style="width: 80px;"> / 
+                            <input type="text" class="data-field" id="bpDiastolic" placeholder="Diastolic" style="width: 80px;"> mmHg
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Respiration Rate :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="respRate" style="width: 100px;"> breaths/min
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">SpO2 (%) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="spo2" style="width: 100px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RANGE OF MOTION TAB -->
+            <div id="view-rom" class="view-content">
+                <div class="section-title">Range of Motion Assessment</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Body Part :</div>
+                        <div class="plan-input">
+                            <select class="data-field" id="romBodyPart" style="width: 200px;">
+                                <option value="">Select</option>
+                                <option value="shoulder">Shoulder</option>
+                                <option value="elbow">Elbow</option>
+                                <option value="wrist">Wrist</option>
+                                <option value="hip">Hip</option>
+                                <option value="knee">Knee</option>
+                                <option value="ankle">Ankle</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">ROM Status :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="romStatus" class="data-field" value="normal"> Normal</label>
+                            <label><input type="radio" name="romStatus" class="data-field" value="limited"> Limited</label>
+                            <label><input type="radio" name="romStatus" class="data-field" value="restricted"> Restricted</label>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Details :</div>
+                        <div class="plan-input">
+                            <textarea class="data-field" id="romDetails" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MOBILITY TAB -->
+            <div id="view-mobility" class="view-content">
+                <div class="section-title">Mobility Assessment</div>
+                <div class="mobility-grid">
+                    <div class="m-row">
+                        <div class="m-cell m-label">Sitting Balance</div>
+                        <div class="m-cell"><select class="data-field" id="mob_sitBalance"><option>Select</option><option value="independent">Independent</option><option value="contact">Contact Assist</option><option value="minimal">Minimal Assist</option></select></div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-cell m-label">Sit to Stand</div>
+                        <div class="m-cell"><select class="data-field" id="mob_sitToStand"><option>Select</option><option value="independent">Independent</option><option value="contact">Contact Assist</option><option value="minimal">Minimal Assist</option></select></div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-cell m-label">Ambulation</div>
+                        <div class="m-cell"><select class="data-field" id="mob_ambulation"><option>Select</option><option value="independent">Independent</option><option value="contact">Contact Assist</option><option value="supervised">Supervised</option></select></div>
+                    </div>
+                    <div class="m-row">
+                        <div class="m-cell m-label">Walking Distance (m)</div>
+                        <div class="m-cell"><input type="text" class="data-field" id="mob_distance" style="width: 80px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OUTCOME MEASURES TAB -->
+            <div id="view-outcome" class="view-content">
+                <div class="section-title">Outcome Measures</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Timed Up & Go (seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="tug_score" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Berg Balance Scale :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="berg_score" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">5x Sit to Stand (seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="ssts_score" style="width: 100px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WALK TEST TAB -->
+            <div id="view-walk" class="view-content">
+                <div class="section-title">10-Meter Walk Test</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Distance (m) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="walk_distance" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Trial 1 (seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="walk_trial1" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Trial 2 (seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="walk_trial2" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Trial 3 (seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="walk_trial3" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Gait Speed (m/s) :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="walk_speed" style="width: 100px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYSIS TAB -->
+            <div id="view-analysis" class="view-content">
+                <div class="section-title">Analysis & Goals</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Problems :</div>
+                        <div class="plan-input">
+                            <textarea class="data-field" id="problems" style="width: 100%; height: 80px;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="section-title">Goal 1</div>
+                    <div class="plan-row">
+                        <div class="plan-label">Goal :</div>
+                        <div class="plan-input">
+                            <textarea class="data-field" id="goal1_text" style="width: 100%; height: 60px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Target Date :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="goal1_target" placeholder="dd-MMM-yyyy" style="width: 150px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="section-title">Goal 2</div>
+                    <div class="plan-row">
+                        <div class="plan-label">Goal :</div>
+                        <div class="plan-input">
+                            <textarea class="data-field" id="goal2_text" style="width: 100%; height: 60px;"></textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Target Date :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="goal2_target" placeholder="dd-MMM-yyyy" style="width: 150px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERVENTION TAB -->
+            <div id="view-intervention" class="view-content">
+                <div class="section-title">Intervention & Evaluation</div>
+                <div style="margin-bottom: 15px;">
+                    <div style="font-weight: bold; color: var(--highlight-blue); margin-bottom: 5px;">Intervention :</div>
+                    <textarea class="data-field" id="intervention" style="width:100%; height:120px; border: 1px solid #7F9DB9; padding: 8px;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <div style="font-weight: bold; color: var(--highlight-blue); margin-bottom: 5px;">Evaluation :</div>
+                    <textarea class="data-field" id="evaluation" style="width:100%; height:120px; border: 1px solid #7F9DB9; padding: 8px;"></textarea>
+                </div>
+
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Post Treatment :</div>
+                        <div class="plan-input">
+                            <select class="data-field" id="painPost" style="width: 100px;">
+                                <option value="">Select</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAN TAB -->
+            <div id="view-plan" class="view-content active">
+                <div class="section-title">Plan</div>
+                <div style="border: 1px solid #ccc; margin-top: 5px;">
+                    <div class="plan-row">
+                        <div class="plan-label">Followup Status :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="followupStatus" class="data-field" value="active" checked> Active</label>
+                            <label><input type="radio" name="followupStatus" class="data-field" value="maintenance"> Maintenance</label>
+                            <label><input type="radio" name="followupStatus" class="data-field" value="onhold"> Therapy On Hold</label>
+                        </div>
+                    </div>
+
+                    <div class="plan-row">
+                        <div class="plan-label">Review in :</div>
+                        <div class="plan-input">
+                            <input type="text" class="data-field" id="reviewIn" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="treatment-plan-container">
+                    <div class="treatment-label">Treatment Plan :</div>
+                    <div style="flex: 1; padding: 0; background: #fff;">
+                        <textarea class="data-field" id="treatmentPlan" style="width: 100%; height: 120px; border: none; padding: 8px;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DISCLAIMER TAB -->
+            <div id="view-disclaimer" class="view-content">
+                <div class="section-title">Disclaimer</div>
+                <div style="border: 1px solid #ccc; background: #fff; padding: 10px;">
+                    <label>
+                        <input type="checkbox" class="data-field" id="disclaimerCheck">
+                        Patient/Caregiver understands the Physiotherapy interventions, instructions and management
+                    </label>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- IMPORT/EXPORT MODAL -->
+<div id="importModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeImportModal()">&times;</span>
+        <div class="modal-header">📥 Import JSON Data</div>
+        <p style="font-size: 11px; margin-bottom: 10px;">Paste previously exported JSON data below to populate all fields:</p>
+        <textarea id="importJSON" placeholder="Paste JSON here..."></textarea>
+        <div class="modal-buttons">
+            <button class="copy-btn" onclick="importData()">Import Data</button>
+            <button onclick="closeImportModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get all data fields
+    function getAllData() {
+        const data = {};
+        document.querySelectorAll('.data-field').forEach(field => {
+            if (field.type === 'radio') {
+                if (field.checked) {
+                    data[field.name] = field.value;
+                }
+            } else if (field.type === 'checkbox') {
+                data[field.id] = field.checked;
+            } else if (field.id) {
+                data[field.id] = field.value;
+            }
+        });
+        return data;
+    }
+
+    // Export data to JSON
+    function exportData() {
+        const data = getAllData();
+        const jsonString = JSON.stringify(data, null, 2);
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(jsonString).then(() => {
+            alert('✅ Data exported! JSON has been copied to clipboard.\n\nYou can now:\n1. Save it to a file\n2. Share it with your team\n3. Use it to pre-populate the form later');
+        }).catch(() => {
+            // Fallback: show in modal if clipboard fails
+            showExportModal(jsonString);
+        });
+    }
+
+    // Show export modal
+    function showExportModal(jsonString) {
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <span class="close-modal" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                <div class="modal-header">💾 Exported Data</div>
+                <p style="font-size: 11px; margin-bottom: 10px;">Copy this JSON data:</p>
+                <textarea id="exportJSON" readonly style="width: 100%; height: 300px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #ccc;">${jsonString}</textarea>
+                <div class="modal-buttons">
+                    <button class="copy-btn" onclick="document.getElementById('exportJSON').select(); document.execCommand('copy'); alert('Copied!')">Copy to Clipboard</button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Show import modal
+    function showImportModal() {
+        document.getElementById('importModal').classList.add('active');
+    }
+
+    // Close import modal
+    function closeImportModal() {
+        document.getElementById('importModal').classList.remove('active');
+        document.getElementById('importJSON').value = '';
+    }
+
+    // Import data from JSON
+    function importData() {
+        const jsonString = document.getElementById('importJSON').value.trim();
+        
+        try {
+            const data = JSON.parse(jsonString);
+            
+            // Populate fields
+            document.querySelectorAll('.data-field').forEach(field => {
+                if (field.type === 'radio') {
+                    if (data[field.name] === field.value) {
+                        field.checked = true;
+                    }
+                } else if (field.type === 'checkbox') {
+                    field.checked = data[field.id] || false;
+                } else if (field.id && data[field.id] !== undefined) {
+                    field.value = data[field.id];
+                }
+            });
+            
+            alert('✅ Data imported successfully!');
+            closeImportModal();
+        } catch (e) {
+            alert('❌ Invalid JSON format. Please check your data.');
+            console.error(e);
+        }
+    }
+
+    // Clear all data
+    function clearAllData() {
+        if (confirm('Are you sure? This will clear all filled data.')) {
+            document.querySelectorAll('.data-field').forEach(field => {
+                if (field.type === 'checkbox') {
+                    field.checked = false;
+                } else if (field.type === 'radio') {
+                    field.checked = false;
+                } else {
+                    field.value = '';
+                }
+            });
+            alert('✅ All data cleared!');
+        }
+    }
+
+    // Switch views
+    function switchView(viewId, element) {
+        document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.tree-item').forEach(t => t.classList.remove('active'));
+        const target = document.getElementById(viewId);
+        if(target) target.classList.add('active');
+        if(element) element.classList.add('active');
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('importModal');
+        if (event.target == modal) {
+            modal.classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>
