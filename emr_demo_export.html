@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMR Documentation - Complete</title>
+    <style>
+        :root {
+            --bg-main: #EBEBEB;
+            --bg-sidebar: #f5f5f5;
+            --bg-input: #FFFFFF;
+            --border-color: #A0A0A0;
+            --text-main: #333333;
+            --header-gray: #f0f0f0;
+            --highlight-blue: #006D9C;
+            --highlight-text: #ffffff;
+            --tree-hover: #d9d9d9;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            font-size: 11px; color: var(--text-main);
+            overflow: hidden;
+        }
+
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
+
+        /* Top Menu */
+        .top-nav {
+            background: var(--header-gray);
+            border-bottom: 1px solid var(--border-color);
+            padding: 4px 10px; display: flex; gap: 15px;
+        }
+
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+        /* Sidebar Tree View */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        .sidebar-header {
+            padding: 5px; font-weight: bold;
+            border-bottom: 1px solid var(--border-color);
+            background: #e0e0e0;
+            margin-bottom: 5px;
+        }
+
+        .tree-item {
+            padding: 3px 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex; align-items: center;
+        }
+
+        .tree-item:hover { background: var(--tree-hover); }
+        .tree-item.active { 
+            background: var(--highlight-blue); 
+            color: white;
+            border: 1px solid #006D9C;
+        }
+
+        /* Indentation Logic */
+        .lvl-1 { padding-left: 10px; font-weight: bold; }
+        .lvl-2 { padding-left: 25px; font-weight: normal; }
+        .lvl-3 { padding-left: 40px; font-weight: normal; color: #555; }
+
+        /* Main Content */
+        .content-area {
+            flex: 1; background: var(--bg-main);
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .content-toolbar {
+            padding: 5px; background: #f8f8f8;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; gap: 10px; align-items: center;
+        }
+
+        .btn {
+            border: 1px solid #999; background: #eee;
+            padding: 2px 8px; cursor: pointer;
+            font-size: 11px; display: flex; align-items: center; gap: 4px;
+        }
+
+        /* Views */
+        .view-content { display: none; padding: 10px; }
+        .view-content.active { display: block; }
+
+        /* Form Components */
+        .section-title {
+            color: var(--highlight-blue);
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 8px;
+            padding-bottom: 2px;
+        }
+
+        textarea, input[type="text"], select {
+            border: 1px solid #7F9DB9;
+            font-family: inherit; font-size: 11px;
+            box-sizing: border-box;
+        }
+        
+        textarea { resize: vertical; width: 100%; }
+
+        /* --- PLAN TAB SPECIFIC STYLES --- */
+        .plan-row {
+            display: flex;
+            border-bottom: 1px solid #dcdcdc;
+            background: #fff;
+            min-height: 26px;
+        }
+        .plan-label {
+            width: 180px;
+            background: #f0f0f0;
+            padding: 5px;
+            font-weight: bold;
+            border-right: 1px solid #dcdcdc;
+            display: flex; align-items: center;
+        }
+        .plan-input {
+            flex: 1; padding: 5px;
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .plan-date-group { display: flex; align-items: center; gap: 3px; }
+        .icon-btn { cursor: pointer; font-size: 12px; }
+
+        .treatment-plan-container {
+            display: flex; margin-top: 15px;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        .treatment-label {
+            width: 180px;
+            background-color: var(--highlight-blue);
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+        }
+        
+        /* --- OTHER TABS STYLES --- */
+        .mobility-grid { display: table; width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #ccc; }
+        .m-row { display: table-row; border-bottom: 1px solid #eee; }
+        .m-cell { display: table-cell; padding: 3px; vertical-align: middle; }
+        .m-check { width: 20px; text-align: center; }
+        .m-label { width: 160px; font-weight: 500; background: #f9f9f9; padding-left: 5px; }
+        .row-highlight { background-color: var(--highlight-blue); color: white; }
+        .row-highlight .m-label { background-color: transparent; color: white; }
+        
+        .active-goal-card { border: 1px solid var(--highlight-blue); background: #fff; margin-bottom: 15px; }
+        .active-goal-header { background: var(--highlight-blue); color: white; padding: 4px; font-weight: bold; }
+        .active-goal-body { display: flex; padding: 5px; gap: 10px; }
+        
+        .rte-box { border: 1px solid #999; background: #fff; margin-bottom: 10px; }
+        .rte-toolbar { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 3px; display: flex; gap: 5px; }
+        .rte-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
+
+        /* Export / Import buttons */
+        .data-btn {
+            border: none;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: opacity 0.15s;
+        }
+        .data-btn:hover { opacity: 0.85; }
+        .btn-export {
+            background: #006D9C;
+            color: white;
+            margin-left: auto;
+        }
+        .btn-import {
+            background: #5a7a3a;
+            color: white;
+        }
+        .import-success-toast {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #2d6a2d;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+    </style>
+    <!-- Hidden file input for import -->
+    <input type="file" id="importFileInput" accept=".json" style="display:none">
+</head>
+<body>
+
+<div id="importToast" class="import-success-toast">✅ Data imported successfully!</div>
+<div class="app-container">
+    <div class="top-nav">
+        <span>File</span> <span>View</span> <span>GoTo</span> <span>Actions</span> <span>Preferences</span> <span>Tools</span>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-header">Sections</div>
+            
+            <div class="tree-item lvl-1">**Special Note</div>
+            <div class="tree-item lvl-2">Special Notes</div>
+            <div class="tree-item lvl-2">##Referral Information</div>
+            <div class="tree-item lvl-2">##General Information</div>
+            <div class="tree-item lvl-2">Medical and Social History</div>
+            <div class="tree-item lvl-2">Relevant Investigations / Procedures</div>
+            
+            <div class="tree-item lvl-1">**Subjective</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-subjective', this)">Subjective</div>
+            
+            <div class="tree-item lvl-1">**##Pain Assessment / Body Chart</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-pain', this)">Pain Assessment</div>
+            <div class="tree-item lvl-2">Body Chart</div>
+            
+            <div class="tree-item lvl-1">**Objective</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-observation', this)">Observation</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Vital Signs</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Cognition/ Orientation</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Respiratory Assessment</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Range of Motion (ROM)</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Muscle Testing</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Sensation</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Reflexes</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-rom', this)">Tone</div>
+            <div class="tree-item lvl-2">Circulatory</div>
+            <div class="tree-item lvl-2">Additional Information</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-mobility', this)">Mobility</div>
+            <div class="tree-item lvl-2">Oedema/ Lymphoedema</div>
+            <div class="tree-item lvl-2">Other Assessments</div>
+
+            <div class="tree-item lvl-1">**Outcome Measures</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-outcome', this)">Additional Assessments/Outcome Measures</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-walk', this)">Walk Test</div>
+
+            <div class="tree-item lvl-1">**Analysis</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-analysis', this)">Analysis</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-analysis', this)">Goals</div>
+
+            <div class="tree-item lvl-1">**Intervention & Evaluation</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-intervention', this)">Intervention & Evaluation</div>
+            <div class="tree-item lvl-2">Treatment Services</div>
+            <div class="tree-item lvl-2">Patient and Family Education</div>
+            
+            <div class="tree-item lvl-1">**Plan</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-plan', this)">Plan</div>
+            
+            <div class="tree-item lvl-1">**Disclaimer</div>
+            <div class="tree-item lvl-2" onclick="switchView('view-disclaimer', this)">Disclaimer</div>
+        </div>
+
+        <div class="content-area">
+            <div class="content-toolbar">
+                <button class="btn">📋 Copy Forward</button>
+                <button class="btn">🔗 Refer to Note</button>
+                <button class="btn">👁️ Preview</button>
+                <button class="btn">✏️ Modify Template</button>
+                <button class="btn">⌨️ Acronym Expansion</button>
+                <button class="data-btn btn-import" onclick="document.getElementById('importFileInput').click()">📂 Import Data</button>
+                <button class="data-btn btn-export" onclick="exportEMRData()">⬇️ Export as JSON</button>
+            </div>
+
+            <!-- PAIN ASSESSMENT TAB -->
+            <div id="view-pain" class="view-content">
+                <div class="section-title">Pain Assessment</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Pain :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="pain" id="pain_yes" value="yes" checked> Yes...</label>
+                            <label><input type="radio" name="pain" id="pain_no" value="no"> No...</label>
+                            <label><input type="radio" name="pain" id="pain_unable" value="unable"> Unable to Assess...</label>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Scale :</div>
+                        <div class="plan-input">
+                            <select id="pain_scale" style="width: 250px;"><option>VNP (Verbal Numerical Pain Scale)</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Location :</div>
+                        <div class="plan-input">
+                            <input type="text" id="pain_location" style="width: 100%; max-width: 400px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Description :</div>
+                        <div class="plan-input">
+                            <textarea id="pain_description" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Frequency :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="pfreq" id="pfreq_constant" value="constant"> Constant</label>
+                            <label><input type="radio" name="pfreq" id="pfreq_rest" value="rest"> At Rest</label>
+                            <label><input type="radio" name="pfreq" id="pfreq_movement" value="movement" checked> Movement</label>
+                            <label><input type="radio" name="pfreq" id="pfreq_sporadic" value="sporadic"> Sporadic</label>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Scale :</div>
+                        <div class="plan-input">
+                            <select id="pain_scale2" style="width: 250px;"><option>VNP (Verbal Numerical Pain Scale)</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Current Pain Intensity :</div>
+                        <div class="plan-input">
+                            <select id="pain_current_intensity" style="width: 80px;"><option>2</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Least Pain Intensity :</div>
+                        <div class="plan-input">
+                            <select id="pain_least_intensity" style="width: 80px;"><option></option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Worst Pain Intensity :</div>
+                        <div class="plan-input">
+                            <select id="pain_worst_intensity" style="width: 80px;"><option></option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="background: var(--highlight-blue); color: white;">Onset :</div>
+                        <div class="plan-input" style="background: var(--highlight-blue); color: white;">
+                            <input type="text" id="pain_onset" style="flex: 1;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Aggravating Factor :</div>
+                        <div class="plan-input">
+                            <textarea id="pain_aggravating" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Relieving Factor :</div>
+                        <div class="plan-input">
+                            <textarea id="pain_relieving" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label">Pain Site 2</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="ps2"> Add</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBJECTIVE TAB -->
+            <div id="view-subjective" class="view-content">
+                <div class="section-title">Subjective</div>
+                <div style="display: flex;">
+                    <div style="width: 150px; font-weight: bold; background: #006D9C; color: white; padding: 5px;">Subjective Findings :</div>
+                    <textarea id="subjective_findings" style="flex: 1; height: 200px; border: 1px solid #006D9C;"></textarea>
+                </div>
+            </div>
+
+            <!-- OBSERVATION TAB -->
+            <div id="view-observation" class="view-content">
+                <div class="section-title">Observation</div>
+                <div style="border: 1px solid #ccc; background: #fff; margin-bottom: 15px;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="background: var(--highlight-blue); color: white; width: 200px;">Observation Findings :</div>
+                        <div class="plan-input" style="background: var(--highlight-blue); color: white;">
+                            <input type="text" id="obs_findings" value="compulsory" style="flex: 1;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Vital Signs</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="vs_pulse_check" checked></div>
+                        <div class="plan-label" style="width: 200px;">Pulse Rate :</div>
+                        <div class="plan-input" style="flex: 1;"><input type="text" id="vs_pulse" style="width: 100px;"> beats/min</div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="vs_bp_check" checked></div>
+                        <div class="plan-label" style="width: 200px;">Blood Pressure :</div>
+                        <div class="plan-input"><input type="text" id="vs_bp_sys" style="width: 80px;"> / <input type="text" id="vs_bp_dia" style="width: 80px;"> mmHg</div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="vs_map_check"></div>
+                        <div class="plan-label" style="width: 200px;">Mean Arterial Pressure:</div>
+                        <div class="plan-input"><input type="text" id="vs_map" style="width: 100px;"> mmHg</div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="vs_rr_check"></div>
+                        <div class="plan-label" style="width: 200px;">Respiration Rate :</div>
+                        <div class="plan-input"><input type="text" id="vs_rr" style="width: 100px;"> breaths/min</div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="vs_spo2_check" checked></div>
+                        <div class="plan-label" style="width: 200px;">SpO2 (%):</div>
+                        <div class="plan-input"><input type="text" id="vs_spo2" style="width: 100px;"> on <label><input type="radio" name="spo2" id="spo2_roomair" value="roomair"> Room Air</label></div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 200px;">Additional Information :</div>
+                        <div class="plan-input">
+                            <textarea id="vs_additional" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Cognition/ Orientation</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 200px;">Consciousness / Mental Status / Orientation :</div>
+                        <div class="plan-input">
+                            <textarea id="cognition_status" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;">compulsory</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Respiratory Assessment</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label">Click to Add / Edit or Clear Image :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="respimg"> Add / Edit Image</label>
+                            <label><input type="radio" name="respimg"> Retrieve Last Charted Image</label>
+                            <label><input type="radio" name="respimg"> Clear Image</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RANGE OF MOTION TAB -->
+            <div id="view-rom" class="view-content">
+                <div class="section-title">Range of Motion (ROM)</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="rom_check" checked></div>
+                        <div class="plan-label" style="width: 200px;">Body Part :</div>
+                        <div class="plan-input">
+                            <select id="rom_body_part" style="width: 120px;"><option></option></select>
+                            <label style="margin-left: 10px;"><input type="radio" name="romactive" id="rom_active" value="active"> Active</label>
+                            <label><input type="radio" name="romactive" id="rom_passive" value="passive" checked> Passive</label>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="m-check"><input type="checkbox" id="rom_details_check" checked></div>
+                        <div class="plan-label" style="width: 200px;">Details :</div>
+                        <div class="plan-input">
+                            <textarea id="rom_details" style="width: 100%; height: 80px; border: 1px solid #7F9DB9;">compulsory</textarea>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 200px;"></div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="addrom"> Add Range of Motion (ROM)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Muscle Testing</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 200px;">Muscle Strength :</div>
+                        <div class="plan-input">
+                            <textarea id="muscle_strength" style="width: 100%; height: 100px; border: 1px solid #7F9DB9;">compulsory</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Sensation</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 200px;">Details of Sensation :</div>
+                        <div class="plan-input">
+                            <textarea id="sensation_details" style="width: 100%; height: 100px; border: 1px solid #7F9DB9;">compulsory</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Reflexes</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 200px;">Details of Reflexes :</div>
+                        <div class="plan-input">
+                            <textarea id="reflexes_details" style="width: 100%; height: 100px; border: 1px solid #7F9DB9;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">Tone</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="background: var(--highlight-blue); color: white; width: 200px;">Details of Tone :</div>
+                        <div class="plan-input" style="background: var(--highlight-blue); color: white;">
+                            <input type="text" id="tone_details" value="compulsory" style="flex: 1;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MOBILITY TAB -->
+            <div id="view-mobility" class="view-content">
+                <div class="section-title">Mobility</div>
+                <div class="mobility-grid">
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_rolling_check"></div><div class="m-cell m-label">Rolling</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_rolling_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_rolling_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_lts_check"></div><div class="m-cell m-label">Lie to Sit at Edge of Bed</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_lts_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_lts_text" style="width:100%"></div></div>
+                    <div class="m-row row-highlight"><div class="m-cell m-check"><input type="checkbox" id="mob_sit_check" checked></div><div class="m-cell m-label">Sitting Balance</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_sit_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_sit_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_sts_check"></div><div class="m-cell m-label">Sit to Stand</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_sts_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_sts_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_stand_check"></div><div class="m-cell m-label">Standing Balance</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_stand_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_stand_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_trans_check"></div><div class="m-cell m-label">Transfers</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_trans_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_trans_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_gait_check"></div><div class="m-cell m-label">Ambulation / Gait</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_gait_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_gait_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_aid_check"></div><div class="m-cell m-label">Walking Aid</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_aid_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_aid_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_dist_check"></div><div class="m-cell m-label">Distance</div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_dist_text" style="width:100%; max-width:100px;"></div><div class="m-cell">metres</div><div class="m-cell"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_steps_check"></div><div class="m-cell m-label">Steps</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_steps_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_steps_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_kerb_check"></div><div class="m-cell m-label">Kerb</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_kerb_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_kerb_text" style="width:100%"></div></div>
+                    <div class="m-row"><div class="m-cell m-check"><input type="checkbox" id="mob_stairs_check"></div><div class="m-cell m-label">Stairs</div><div class="m-cell">:</div><div class="m-cell"><select id="mob_stairs_select" style="width:100%"><option></option></select></div><div class="m-cell">:</div><div class="m-cell"><input type="text" id="mob_stairs_text" style="width:100%"></div></div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="section-title">Additional Information</div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 300px;">Additional Information (Cerebellar Signs, Perceptual Issue, Shoulder Subluxation, Wrist Drop / Foot Drop, etc.) :</div>
+                        <div class="plan-input">
+                            <textarea id="mob_additional" style="width: 100%; height: 100px; border: 1px solid #7F9DB9;">proprioception is compulsory</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OUTCOME MEASURES TAB -->
+            <div id="view-outcome" class="view-content">
+                <div class="section-title">Additional Assessments/Outcome Measures</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Outcome Measures 1 :</div>
+                        <div class="plan-input">
+                            <select style="width: 100%;"><option>Timed Up & Go (Time - seconds)</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Score 1 :</div>
+                        <div class="plan-input">
+                            <input type="text" id="outcome_score1" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Outcome Measures 2 :</div>
+                        <div class="plan-input">
+                            <select id="outcome_measure2" style="width: 100%;"><option>Berg Balance Scale (Total Score)</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="background: var(--highlight-blue); color: white; width: 250px;">Score 2 :</div>
+                        <div class="plan-input" style="background: var(--highlight-blue); color: white;">
+                            <input type="text" id="outcome_score2" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Outcome Measures 3 :</div>
+                        <div class="plan-input">
+                            <select id="outcome_measure3" style="width: 100%;"><option>5 Times Sit to Stand Test (Time - seconds)</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Score 3 :</div>
+                        <div class="plan-input">
+                            <input type="text" id="outcome_score3" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;"></div>
+                        <div class="plan-input">
+                            <label style="font-weight: bold;"><input type="radio" name="addoutcome"> Add</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="section-title">Details of Outcome Measures :</div>
+                    <div class="rte-box">
+                        <div class="rte-toolbar">
+                            <div class="rte-icon">✂️</div>
+                            <div class="rte-icon">📋</div>
+                            <div class="rte-icon">📄</div>
+                            <div class="rte-icon">👆</div>
+                            <div class="rte-icon">💬</div>
+                            <div class="rte-icon">🚗</div>
+                            <select style="width: 50px; margin-left: 10px;"><option>100%</option></select>
+                            <div class="rte-icon">🖼️</div>
+                        </div>
+                        <textarea id="outcome_details" style="border:none; padding:10px; height:100px; width: 100%;"></textarea>
+                    </div>
+                    <div style="padding: 8px; background: #f5f5f5; font-size: 10px;">Not compulsory, but good to do.<br/><br/>TUG and 10m walk test: for contact assist patients<br/>berg balance scale: Independent- moderate assist patients<br/>5X STS: for patients that can sit to stand without arm support</div>
+                </div>
+            </div>
+
+            <!-- WALK TEST TAB -->
+            <div id="view-walk" class="view-content">
+                <div class="section-title">Walk Test</div>
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Distance (metres)</div>
+                        <div class="plan-input">
+                            <input type="text" id="walk_distance" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Preferred Trial 1 (in seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" id="walk_pref1" style="width: 150px;"> 
+                            <span style="margin-left: 20px; font-weight: bold;">Fast Trial 1 (in seconds) :</span> 
+                            <input type="text" id="walk_fast1" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Preferred Trial 2 (in seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" id="walk_pref2" style="width: 150px;"> 
+                            <span style="margin-left: 20px; font-weight: bold;">Fast Trial 2 (in seconds) :</span> 
+                            <input type="text" id="walk_fast2" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Preferred Trial 3 (in seconds) :</div>
+                        <div class="plan-input">
+                            <input type="text" id="walk_pref3" style="width: 150px;"> 
+                            <span style="margin-left: 20px; font-weight: bold;">Fast Trial 3 (in seconds) :</span> 
+                            <input type="text" id="walk_fast3" style="width: 150px;">
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Preferred Gait Speed (m/s) :</div>
+                        <div class="plan-input">
+                            <input type="text" id="walk_pref_speed" style="width: 150px;"> 
+                            <span style="margin-left: 20px; font-weight: bold;">Fast Gait Speed (m/s) :</span> 
+                            <input type="text" id="walk_fast_speed" style="width: 150px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div style="background: var(--highlight-blue); color:white; padding:8px; font-weight: bold;">Additional Information :</div>
+                    <textarea id="walk_additional" style="width:100%; height:100px; border: 1px solid #ccc;"></textarea>
+                    <div style="background: #f5f5f5; padding: 8px; font-size: 10px; margin-top: 5px;">
+                        not compulsory but good to do for patients who are independent- contact assist<br/><br/>
+                        <strong>Legend :</strong><br/>
+                        Speed = Distance/average time (where average time is calculated from Trial 1, 2, 3)
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALYSIS TAB -->
+            <div id="view-analysis" class="view-content">
+                <div class="section-title">Analysis</div>
+                <div style="display: flex; margin-bottom: 5px; border: 1px solid #ccc; background: #fff;">
+                    <div style="width: 120px; font-weight: bold; background: #f0f0f0; padding: 5px; border-right: 1px solid #ccc;">Problems :</div>
+                    <textarea id="analysis_problems" style="flex: 1; height: 80px; border: none; padding: 5px;">compulsory</textarea>
+                </div>
+                <div style="padding: 8px; background: #fff; border: 1px solid #ccc; margin-bottom: 15px;">
+                    <span style="color: var(--highlight-blue); font-weight: bold;">⚠️</span> Goals not achieved by targeted date (For Reference only) :
+                </div>
+
+                <div class="section-title">Goals</div>
+                <div class="active-goal-card">
+                    <div class="active-goal-header">
+                        <span style="color: var(--highlight-blue); font-weight: bold;">⚠️</span> Goal
+                    </div>
+                    <div class="active-goal-body" style="padding: 10px; flex-direction: column;">
+                        <textarea id="goal_main" style="width:100%; height:60px; border: 1px solid #ccc; padding: 5px;">compulsory</textarea>
+                        <div style="margin-top: 10px; display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div>
+                                <div style="font-weight: bold; color: var(--highlight-blue); font-size: 10px;">⚠️ Target to achieve in</div>
+                                <input type="text" id="goal_main_target" style="width: 150px;">
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: var(--highlight-blue); font-size: 10px;">⚠️ .</div>
+                                <select id="goal_main_unit" style="width: 100px;"><option></option></select>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: var(--highlight-blue); font-size: 10px;">⚠️ Add</div>
+                                <label style="margin-top: 5px;"><input type="radio" name="addgoal"> Add</label>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <div style="font-weight: bold; color: var(--highlight-blue); font-size: 10px;">⚠️ Starting</div>
+                            <input type="text" id="goal_main_start" value="25 - Jun - 2019" style="width: 200px;">
+                            <span style="margin-left: 10px; cursor: pointer;">📅 🕒</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="active-goal-card">
+                        <div class="active-goal-header">Goal 1</div>
+                        <div class="active-goal-body" style="padding: 10px; flex-direction: column;">
+                            <textarea id="goal1_text" style="width:100%; height:60px; border: 1px solid #ccc; padding: 5px;"></textarea>
+                            <div style="margin-top: 10px;">
+                                <div style="font-weight: bold;">Target to achieve by :</div>
+                                <input type="text" id="goal1_target" style="width: 150px;">
+                                <div style="margin-top: 5px;">
+                                    <label><input type="radio" name="g1status" id="g1_met" value="met"> Goal Met</label>
+                                    <label><input type="radio" name="g1status" id="g1_notmet" value="notmet"> Not Met</label>
+                                    <label><input type="radio" name="g1status" id="g1_modified" value="modified"> Modified</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="active-goal-card">
+                        <div class="active-goal-header">Goal 2</div>
+                        <div class="active-goal-body" style="padding: 10px; flex-direction: column;">
+                            <textarea id="goal2_text" style="width:100%; height:60px; border: 1px solid #ccc; padding: 5px;"></textarea>
+                            <div style="margin-top: 10px;">
+                                <div style="font-weight: bold;">Target to achieve by :</div>
+                                <input type="text" id="goal2_target" style="width: 150px;">
+                                <div style="margin-top: 5px;">
+                                    <label><input type="radio" name="g2status" id="g2_met" value="met"> Goal Met</label>
+                                    <label><input type="radio" name="g2status" id="g2_notmet" value="notmet"> Not Met</label>
+                                    <label><input type="radio" name="g2status" id="g2_modified" value="modified"> Modified</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERVENTION & EVALUATION TAB -->
+            <div id="view-intervention" class="view-content">
+                <div class="section-title">Intervention & Evaluation</div>
+                <div style="margin-bottom: 15px;">
+                    <div style="font-weight: bold; color: var(--highlight-blue); margin-bottom: 5px;">Intervention :</div>
+                    <div class="rte-box">
+                        <div class="rte-toolbar">
+                            <div class="rte-icon">✂️</div>
+                            <div class="rte-icon">📋</div>
+                            <div class="rte-icon">📄</div>
+                            <div class="rte-icon">👆</div>
+                            <div class="rte-icon">💬</div>
+                            <div class="rte-icon">🚗</div>
+                            <select style="width: 50px; margin-left: 10px;"><option>100%</option></select>
+                            <div class="rte-icon">🖼️</div>
+                        </div>
+                        <textarea id="intervention_text" style="border:none; padding:10px; height:150px; width: 100%; font-family: Arial, sans-serif;">compulsory</textarea>
+                    </div>
+                </div>
+
+                <div style="background: var(--highlight-blue); color:white; padding:8px; font-weight: bold; margin-bottom: 10px;">Evaluation :</div>
+                <div class="rte-box" style="margin-bottom: 15px;">
+                    <div class="rte-toolbar">
+                        <div class="rte-icon">✂️</div>
+                        <div class="rte-icon">📋</div>
+                        <div class="rte-icon">📄</div>
+                        <div class="rte-icon">👆</div>
+                        <div class="rte-icon">💬</div>
+                        <div class="rte-icon">🚗</div>
+                        <select style="width: 50px; margin-left: 10px;"><option>100%</option></select>
+                        <div class="rte-icon">🖼️</div>
+                    </div>
+                    <textarea id="evaluation_text" style="border:none; padding:10px; height:150px; width: 100%; font-family: Arial, sans-serif;">compulsory</textarea>
+                </div>
+
+                <div style="border: 1px solid #ccc; background: #fff;">
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Pain Scale Post Treatment :</div>
+                        <div class="plan-input">
+                            <select id="post_pain_scale" style="width: 100%;"><option>VNP (Verbal Numerical Pain Scale)</option></select>
+                        </div>
+                    </div>
+                    <div class="plan-row">
+                        <div class="plan-label" style="width: 250px;">Pain Intensity Post Treatment :</div>
+                        <div class="plan-input">
+                            <select id="post_pain_intensity" style="width: 100px;"><option></option></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAN TAB -->
+            <div id="view-plan" class="view-content active">
+                <div class="section-title">Plan</div>
+                
+                <div style="border: 1px solid #ccc; margin-top: 5px;">
+                    <div class="plan-row">
+                        <div class="plan-label">Followup Status :</div>
+                        <div class="plan-input">
+                            <label><input type="radio" name="fstatus" id="fstatus_active" value="active" checked> Active...</label>
+                            <label><input type="radio" name="fstatus" id="fstatus_maintenance" value="maintenance"> Maintenance...</label>
+                            <label><input type="radio" name="fstatus" id="fstatus_hold" value="hold"> Therapy On Hold</label>
+                            <label><input type="radio" name="fstatus" id="fstatus_discharged" value="discharged"> Discharged from Physiotherapy</label>
+                            <label><input type="radio" name="fstatus" id="fstatus_open" value="open"> Open Date...</label>
+                        </div>
+                    </div>
+
+                    <div class="plan-row">
+                        <div class="plan-label">Review in :</div>
+                        <div class="plan-input">
+                            <input type="text" id="plan_review_in" value="next session" style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <div class="plan-row">
+                        <div class="plan-label">Next Review Date/Time :</div>
+                        <div class="plan-input">
+                            <div class="plan-date-group">
+                                <input type="text" id="plan_next_dd" placeholder="dd" style="width: 30px;"> - 
+                                <input type="text" id="plan_next_mmm" placeholder="MMM" style="width: 40px;"> - 
+                                <input type="text" id="plan_next_yyyy" placeholder="yyyy" style="width: 50px;">
+                                <span class="icon-btn">📅 🕒</span>
+                            </div>
+                            <span style="color:#aaa;">|</span>
+                            <div class="plan-date-group">
+                                <input type="text" id="plan_next_hh" placeholder="HH" style="width: 30px;"> : 
+                                <input type="text" id="plan_next_mm" placeholder="mm" style="width: 30px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="plan-row">
+                        <div class="plan-label">Status Last Updated on :</div>
+                        <div class="plan-input">
+                            <div class="plan-date-group">
+                                <input type="text" id="plan_updated_dd" value="25" style="width: 30px;"> - 
+                                <input type="text" id="plan_updated_mmm" value="Jun" style="width: 40px;"> - 
+                                <input type="text" id="plan_updated_yyyy" value="2019" style="width: 50px;">
+                                <span class="icon-btn">📅 🕒</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="treatment-plan-container">
+                    <div class="treatment-label">
+                        Treatment Plan :
+                    </div>
+                    <div style="flex: 1; padding: 0; background: #fff;">
+                        <textarea id="treatment_plan" style="width: 100%; height: 120px; border: none; padding: 8px;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DISCLAIMER TAB -->
+            <div id="view-disclaimer" class="view-content">
+                <div class="section-title">Disclaimer</div>
+                <div style="border: 1px solid #ccc; background: #fff; padding: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <input type="checkbox" id="disclaimer_check1" checked>
+                        <div style="background: var(--highlight-blue); color: white; padding: 8px; flex: 1; font-weight: bold;">
+                            Patient /Caregiver understands the Physiotherapy interventions, instructions and management
+                        </div>
+                        <input type="checkbox" id="disclaimer_check2" checked style="margin-left: 10px;">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div style="padding: 5px; background: #eee; border-top: 1px solid #999; font-size: 11px;">
+        <label><input type="checkbox" id="status_results_pending"> Results pending</label>
+        <label><input type="checkbox" id="status_priority"> Priority</label>
+        <label><input type="checkbox" id="status_incomplete"> Incomplete</label>
+    </div>
+</div>
+
+<script>
+    // ─── Navigation ───────────────────────────────────────────────────────────
+    function switchView(viewId, element) {
+        document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.tree-item').forEach(t => t.classList.remove('active'));
+        const target = document.getElementById(viewId);
+        if (target) target.classList.add('active');
+        if (element) element.classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const planView = document.getElementById('view-plan');
+        if (planView) planView.classList.add('active');
+    });
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    /**
+     * Assign a stable auto-key to every form element that lacks an id,
+     * so we can round-trip them through JSON.
+     */
+    function ensureAllElementsHaveKeys() {
+        const els = document.querySelectorAll('input, textarea, select');
+        let counter = 0;
+        els.forEach(el => {
+            if (!el.id) {
+                el.id = `__auto_${counter++}`;
+            }
+        });
+    }
+
+    /** Collect every form field in the document into a flat key→value map. */
+    function collectAllFields() {
+        ensureAllElementsHaveKeys();
+        const data = {};
+        const radiosHandled = new Set();
+
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            const key = el.id;
+            if (el.type === 'radio') {
+                if (radiosHandled.has(el.name)) return;
+                radiosHandled.add(el.name);
+                const checked = document.querySelector(`input[name="${el.name}"]:checked`);
+                data[`radio__${el.name}`] = checked ? checked.value || checked.id : '';
+            } else if (el.type === 'checkbox') {
+                data[key] = el.checked;
+            } else {
+                data[key] = el.value;
+            }
+        });
+
+        return data;
+    }
+
+    /** Apply a saved data map back onto the form. */
+    function applyAllFields(data) {
+        ensureAllElementsHaveKeys();
+        const radiosHandled = new Set();
+
+        document.querySelectorAll('input, textarea, select').forEach(el => {
+            const key = el.id;
+            if (el.type === 'radio') {
+                if (radiosHandled.has(el.name)) return;
+                radiosHandled.add(el.name);
+                const savedValue = data[`radio__${el.name}`];
+                if (savedValue !== undefined) {
+                    // Try matching by value first, then by id
+                    const match = document.querySelector(
+                        `input[name="${el.name}"][value="${savedValue}"]`
+                    ) || document.getElementById(savedValue);
+                    if (match) match.checked = true;
+                }
+            } else if (el.type === 'checkbox') {
+                if (data[key] !== undefined) el.checked = !!data[key];
+            } else {
+                if (data[key] !== undefined) el.value = data[key];
+            }
+        });
+    }
+
+    // ─── Export ───────────────────────────────────────────────────────────────
+    function exportEMRData() {
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            version: '1.0',
+            fields: collectAllFields()
+        };
+
+        const json = JSON.stringify(payload, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `emr_data_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ─── Import ───────────────────────────────────────────────────────────────
+    document.getElementById('importFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                const fields = parsed.fields || parsed; // support both wrapped & bare
+                applyAllFields(fields);
+                showToast();
+            } catch (err) {
+                alert('❌ Failed to import: invalid JSON file.\n\n' + err.message);
+            }
+            // Reset so the same file can be re-imported if needed
+            e.target.value = '';
+        };
+        reader.readAsText(file);
+    });
+
+    function showToast() {
+        const toast = document.getElementById('importToast');
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+</script>
+
+</body>
+</html>
